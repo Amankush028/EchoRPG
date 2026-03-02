@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
+import androidx.compose.foundation.shape.CircleShape
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -22,12 +22,23 @@ fun OnboardingScreen(
     onGetStarted: () -> Unit
 ) {
     val pagerState = rememberPagerState(pageCount = { 3 })
-    val scope = rememberCoroutineScope()
 
-    val slides = listOf(
-        Triple("Immersive\nExplicit Stories", "8–12 hour long-form fantasy & dark roleplay.\nNo limits. No censorship.\nMoans, dirty talk, kinks — exactly how you want it.", "🔥"),
-        Triple("Create Your Persona", "Name, body, vibe, kinks, limits.\nYou become the man every girl in the story craves.", "🖤"),
-        Triple("Unlock Girls Forever", "Finish any story → girls are permanently unlocked.\nFree 1-on-1 or group chats that remember every filthy detail.", "💋")
+    val pages = listOf(
+        OnboardingPage(
+            title = "Immersive Explicit Stories",
+            description = "Long-form (8–12 hour) fantasy & dark roleplay.\nUncensored, graphic, moans and dirty talk included.",
+            emoji = "📖"
+        ),
+        OnboardingPage(
+            title = "Create Your Persona",
+            description = "Define your name, body, vibe, kinks & limits.\nGirls will remember everything you do.",
+            emoji = "🧔"
+        ),
+        OnboardingPage(
+            title = "Unlock Girls Forever",
+            description = "Meet girls in stories → they appear instantly.\nOnce unlocked, they are yours in free 1-on-1 or group chat.",
+            emoji = "❤️"
+        )
     )
 
     Box(
@@ -35,83 +46,106 @@ fun OnboardingScreen(
             .fillMaxSize()
             .background(Color(0xFF0A001F))
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.weight(1f)
-            ) { page ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = slides[page].third,
-                        fontSize = 120.sp,
-                        modifier = Modifier.padding(bottom = 48.dp)
-                    )
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            OnboardingPageContent(pages[page])
+        }
 
-                    Text(
-                        text = slides[page].first,
-                        style = MaterialTheme.typography.displayMedium,
-                        fontWeight = FontWeight.Black,
-                        color = Color(0xFFFF4D94),
-                        textAlign = TextAlign.Center,
-                        lineHeight = 42.sp
-                    )
-
-                    Spacer(Modifier.height(32.dp))
-
-                    Text(
-                        text = slides[page].second,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color(0xFFCCCCFF),
-                        textAlign = TextAlign.Center,
-                        lineHeight = 28.sp
-                    )
-                }
-            }
-
-            // Dots
-            Row(
-                Modifier
-                    .height(50.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                repeat(3) { iteration ->
-                    val color = if (pagerState.currentPage == iteration) Color(0xFFFF4D94) else Color(0xFF555577)
+        // Bottom indicators + button
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(bottom = 48.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Page dots
+            Row(horizontalArrangement = Arrangement.Center) {
+                repeat(3) { index ->
+                    val isSelected = pagerState.currentPage == index
                     Box(
                         modifier = Modifier
                             .padding(4.dp)
-                            .size(if (pagerState.currentPage == iteration) 12.dp else 8.dp)
-                            .background(color, shape = MaterialTheme.shapes.small)
+                            .size(if (isSelected) 10.dp else 8.dp)
+                            .background(
+                                color = if (isSelected) Color(0xFFFF4D94) else Color.White.copy(alpha = 0.4f),
+                                shape = CircleShape
+                            )
                     )
                 }
             }
 
-            // Button
+            Spacer(modifier = Modifier.height(32.dp))
+
             Button(
                 onClick = {
-                    if (pagerState.currentPage < 2) {
-                        scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
-                    } else {
+                    if (pagerState.currentPage == 2) {
                         onGetStarted()
+                    } else {
+                        // Optional: auto-advance
                     }
                 },
                 modifier = Modifier
+                    .padding(horizontal = 32.dp)
                     .fillMaxWidth()
-                    .padding(horizontal = 32.dp, vertical = 32.dp),
+                    .height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF4D94))
             ) {
                 Text(
-                    text = if (pagerState.currentPage == 2) "Get Started" else "Continue",
+                    text = if (pagerState.currentPage == 2) "GET STARTED" else "NEXT",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
+    }
+}
+
+private data class OnboardingPage(
+    val title: String,
+    val description: String,
+    val emoji: String
+)
+
+@Composable
+private fun OnboardingPageContent(page: OnboardingPage) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // Placeholder box — replace with real anime art later (we'll do this in Step 3)
+        Box(
+            modifier = Modifier
+                .size(240.dp)
+                .background(Color(0xFF1A0033).copy(alpha = 0.6f), shape = MaterialTheme.shapes.extraLarge),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = page.emoji, fontSize = 120.sp)
+        }
+
+        Spacer(modifier = Modifier.height(48.dp))
+
+        Text(
+            text = page.title,
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Black,
+            color = Color.White,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = page.description,
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color(0xFFCCCCFF),
+            textAlign = TextAlign.Center,
+            lineHeight = 28.sp
+        )
     }
 }

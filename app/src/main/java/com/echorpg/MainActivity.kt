@@ -10,6 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import com.echorpg.ui.character.CharactersScreen   // ← change to this
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.echorpg.repository.GirlRepository
+import com.echorpg.data.AppDatabase
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -49,6 +53,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // ONE-TIME SEEDING
+        lifecycleScope.launch {
+            val db = AppDatabase.getDatabase(this@MainActivity)
+            GirlRepository(db).seedIfNeeded()
+        }
 
         setContent {
             EchoRPGTheme {
@@ -108,10 +118,11 @@ class MainActivity : ComponentActivity() {
 
                         composable("characters") {
                             CharactersScreen(
-                                onGirlSelected = { girl: Girl ->   // explicit type
+                                repository = GirlRepository(AppDatabase.getDatabase(this@MainActivity)),  // ← fixed
+                                onGirlSelected = { girl: Girl ->   // ← your original type (no change needed)
                                     navController.navigate("free_chat/${girl.id}")
                                 },
-                                onGroupChat = { selectedGirls: List<Girl> ->   // explicit type
+                                onGroupChat = { selectedGirls: List<Girl> ->   // ← your original type
                                     val ids = selectedGirls.joinToString(",") { it.id.toString() }
                                     navController.navigate("group_chat?girls=$ids")
                                 },

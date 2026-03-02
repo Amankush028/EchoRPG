@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,7 +32,7 @@ import com.echorpg.data.AppDatabase
 fun StoryChatScreen(
     storyTitle: String,
     persona: Persona,
-    chapterToStart: Int = 1,          // ← NEW: supports jumping to any chapter
+    chapterToStart: Int = 1,
     onBack: () -> Unit,
     onFinishStory: () -> Unit
 ) {
@@ -44,7 +45,6 @@ fun StoryChatScreen(
         ChatViewModel(storyId, persona, storyTitle, storyRepo, girlRepo)
     }
 
-    // Jump to requested chapter if different from saved
     LaunchedEffect(chapterToStart) {
         if (chapterToStart > 1) {
             viewModel.currentChapter = chapterToStart
@@ -60,17 +60,13 @@ fun StoryChatScreen(
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
     }
 
-    // First message only if truly empty
+    // Inside StoryChatScreen composable, replace the LaunchedEffect(Unit) block with this:
     LaunchedEffect(Unit) {
         if (messages.isEmpty()) {
-            val firstNarration = ChatMessage.Narration(
-                "Chapter ${viewModel.currentChapter}/10 • The story of $storyTitle begins...",
-                chapter = viewModel.currentChapter
-            )
-            messages.add(firstNarration)
-            messages.add(ChatMessage.Ai("I've been waiting for you... the night feels different now that you're here.", "Lira", chapter = viewModel.currentChapter))
+            viewModel.initializeStory()
         }
     }
+
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFF0A001F))) {
         TopAppBar(
@@ -126,15 +122,20 @@ fun StoryChatScreen(
             }
         }
 
+        // Bottom bar with RESET CHAPTER button
         Row(
             modifier = Modifier.fillMaxWidth().background(Color(0xFF1A0B38)).padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = { viewModel.resetCurrentChapter() }) {
+                Icon(Icons.Default.Refresh, contentDescription = "Reset Chapter", tint = Color(0xFFFF4D94))
+            }
+
             OutlinedTextField(
                 value = inputText,
                 onValueChange = { inputText = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("What do you do or say...?") },
+                placeholder = { Text("What do you do...?") },
                 colors = TextFieldDefaults.colors(unfocusedContainerColor = Color(0xFF2A1A4A))
             )
 
