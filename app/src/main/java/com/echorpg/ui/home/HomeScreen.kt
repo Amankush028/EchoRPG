@@ -23,28 +23,28 @@ data class StoryCard(
 
 @Composable
 fun HomeScreen(
-    onStartStory: (String) -> Unit   // Takes story title directly
+    onStartStory: (String) -> Unit
 ) {
     val stories = listOf(
         StoryCard(
-            title = "Fantasy Kingdom",
+            title = "Fantasy Hero",
             emoji = "⚔️",
-            teaser = "You are the legendary warrior who saved the realm. Now the princess, her maids and the kingdom's most beautiful women want to reward you."
+            teaser = "You are the legendary warrior who saved the realm. Now Lira, Elara, Aria and Selene — the most beautiful women in the kingdom — want to reward you."
         ),
         StoryCard(
             title = "Mafia Underworld",
             emoji = "🔫",
-            teaser = "You just became the new Don. Every dangerous and beautiful woman in the family wants your protection... and much more."
+            teaser = "You just became the new Don. Sophia, Isabella, Valentina and Bianca — the dangerous and seductive women in the family — want your protection... and much more."
         ),
         StoryCard(
-            title = "College Campus",
-            emoji = "🎓",
-            teaser = "Your final year at the most prestigious university. Secret parties, forbidden professors, and bratty rich girls who always get what they want."
+            title = "Demon Realm",
+            emoji = "😈",
+            teaser = "You fell into the Demon Realm. Lilith, Nyx, Vespera and Morgana — the most powerful and tempting demonesses — have claimed you as theirs."
         ),
         StoryCard(
-            title = "Luxury Yacht",
-            emoji = "⛴️",
-            teaser = "You inherited a billionaire's superyacht. Models, heiresses and mysterious guests are on board — anything goes."
+            title = "Cyberpunk Megacity",
+            emoji = "🌃",
+            teaser = "You are the most wanted hacker in Neon City. Nova, Kira, Luna and Raven — the lethal cyber beauties — need your skills... and your heart."
         )
     )
 

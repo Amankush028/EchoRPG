@@ -36,14 +36,21 @@ class ChatViewModel(
     val relationships = mutableStateMapOf<String, Int>()
     var moralAlignment by mutableStateOf("Neutral")
     private var userMessagesInCurrentChapter = 0
-    private var storySummary = "The adventure has just begun in $storyTitle."
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(90, TimeUnit.SECONDS)
         .build()
 
-    // FULL RICH PROMPT (exactly as you requested - never shortened)
+    // ==================== EXACT 4 GIRLS FROM YOUR SEEDER ====================
+    private val mainGirls = when {
+        storyTitle.contains("Fantasy Hero", ignoreCase = true) -> "Lira, Elara, Aria, Selene"
+        storyTitle.contains("Mafia Underworld", ignoreCase = true) -> "Sophia, Isabella, Valentina, Bianca"
+        storyTitle.contains("Demon Realm", ignoreCase = true) -> "Lilith, Nyx, Vespera, Morgana"
+        storyTitle.contains("Cyberpunk Megacity", ignoreCase = true) -> "Nova, Kira, Luna, Raven"
+        else -> "the four main girls"
+    }
+
     private val systemPrompt = """
 You are writing a high-quality, story-driven interactive novel in real-time called "$storyTitle".
 
@@ -51,75 +58,39 @@ You are writing a high-quality, story-driven interactive novel in real-time call
 - This is FIRST AND FOREMOST a rich story with plot, world-building, character development, conflict, mystery and emotions.
 - Erotic content is allowed but MUST be slow-burn and earned. Never rush into sex.
 - Focus heavily on narration (60-70% of every reply): describe environments, emotions, body language, atmosphere, internal thoughts (in italics), consequences of actions.
-- Advance the plot in every reply. The story must keep moving forward.
-- Build slow-burn romantic and sexual tension. Only escalate physically when the relationship level and story situation justify it.
+- Advance the plot in every reply.
 
-=== STORY SETTINGS (AI MUST FOLLOW EXACTLY) ===
-- If storyTitle contains "Fantasy Kingdom" → Epic Fantasy Realm (medieval kingdoms, magic, dragons, elves, guilds).
-- If storyTitle contains "Space Odyssey" → Sci-Fi Space Odyssey (spaceships, aliens, planets, advanced tech).
-- If storyTitle contains "Horror" → Dark Horror Modern World (psychological terror, monsters, survival).
-- If storyTitle contains "Cyberpunk" → Cyberpunk Neon Streets (hacking, megacorps, neon cities, cybernetic implants).
-Always stay 100% true to the chosen setting.
+=== CRITICAL PLAYER ACTION RULE (MUST OBEY 100%) ===
+- Player messages with *asterisks* (*ignores*, *goes to room*, *walks away*, etc.) are real actions. Show realistic consequences — never ignore them or force conversation.
 
-=== CHAPTER PACING (CRITICAL) ===
-- Each chapter must be long and immersive (8–12 chapters per setting, 30–40+ hours total playtime).
-- A chapter ONLY ends when BOTH conditions are met:
-  1. The hidden milestone is reached.
-  2. The player has sent AT LEAST 12 messages in this chapter.
-- NEVER output [Chapter X Complete] early. If the player ignores NPCs or does little, continue the scene with consequences and more dialogue.
+=== 4 MAIN GIRLS (EXACT NAMES) ===
+The four main girls are: $mainGirls
+Only use these exact names. Never invent new main girls.
 
-=== RESPONSE FORMAT (MUST FOLLOW EXACTLY) ===
+=== RESPONSE FORMAT (STRICT) ===
 **Narration**
-[60-70% rich cinematic narration in second person ("you"). Use *italics* for internal thoughts. No dialogue here.]
+[60-70% rich narration in second person ("you"). No dialogue here.]
 
-**GirlName or NPCName**
+**GirlName**
 "Exact spoken words here."
 
 **Consequences**
-Short reaction + current relationship levels + Moral Alignment update.
+Short reaction + relationship update ONLY if earned.
 
-=== RELATIONSHIP & ALIGNMENT SYSTEM ===
-- Every girl/NPC starts at 15/100.
-- Moral Alignment starts at Neutral. Player choices change it to Good / Neutral / Evil and affect the story + ending.
-- When relationship increases, show: “Your bond with [Name] has deepened…”
-- Every girl will have a Relationship Level (0–100) that starts low and grows naturally.
-Levels:
+Current state: Chapter 1/10, Moral Alignment: Neutral.
 
-0–20: Stranger / Curious
-21–40: Flirting / Interested
-41–60: Close Friend / Romantic Tension
-61–80: Lover / Passionate
-81–100: Obsessed / Soul-Bound (she would do anything for you)
-
-=== SMART MEMORY ===
-Keep only the latest story summary + last 10 messages in context.
-
-Current state:
-- Chapter: 1/10
-- Setting: $storyTitle (follow the exact rules above)
-- Moral Alignment: Neutral
-- All relationships: 15/100
-
-Begin Chapter 1 immediately with a beautiful opening scene in the correct setting. Do not wait.
+Begin immediately and respect every player action.
 """.trimIndent()
 
     fun initializeStory() {
         if (messages.isNotEmpty()) return
-
-        messages.add(ChatMessage.Narration(
-            "Chapter $currentChapter/10 • $storyTitle\n\nThe story begins...",
-            chapter = currentChapter
-        ))
-
-        viewModelScope.launch {
-            sendMessage("Begin the story now.")
-        }
+        messages.add(ChatMessage.Narration("Chapter $currentChapter/10 • $storyTitle\n\nThe story begins...", chapter = currentChapter))
+        viewModelScope.launch { sendMessage("Begin the story now.") }
     }
 
     fun sendMessage(userText: String) {
         userMessagesInCurrentChapter++
-
-        val userMsg = ChatMessage.User(userText, chapter = currentChapter)
+        val userMsg = ChatMessage.User(text = userText, chapter = currentChapter)
         messages.add(userMsg)
         isLoading = true
 
@@ -153,13 +124,13 @@ Begin Chapter 1 immediately with a beautiful opening scene in the correct settin
                     val json = JSONObject().apply {
                         put("model", "arcee-ai/trinity-large-preview:free")
                         put("messages", history)
-                        put("temperature", 0.75)
+                        put("temperature", 0.72)
                         put("max_tokens", 1000)
                     }
 
                     val request = Request.Builder()
                         .url("https://openrouter.ai/api/v1/chat/completions")
-                        .addHeader("Authorization", "Bearer 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")
+                        .addHeader("Authorization", "Bearer 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")
                         .addHeader("HTTP-Referer", "https://echorpg.app")
                         .addHeader("X-Title", "EchoRPG")
                         .post(json.toString().toRequestBody("application/json".toMediaType()))
@@ -168,22 +139,13 @@ Begin Chapter 1 immediately with a beautiful opening scene in the correct settin
                     client.newCall(request).execute().body?.string() ?: "{}"
                 }
 
-                val jsonResponse = JSONObject(reply)
-                if (jsonResponse.has("error")) {
-                    messages.add(ChatMessage.Ai("⚠️ ${jsonResponse.getJSONObject("error").optString("message")}", "System", chapter = currentChapter))
-                    isLoading = false
-                    return@launch
-                }
-
-                val content = jsonResponse.getJSONArray("choices")
-                    .getJSONObject(0)
-                    .getJSONObject("message")
-                    .getString("content")
+                val content = JSONObject(reply).getJSONArray("choices")
+                    .getJSONObject(0).getJSONObject("message").getString("content")
 
                 parseAndAddReply(content)
 
             } catch (e: Exception) {
-                messages.add(ChatMessage.Ai("The world continues to unfold...", "Narrator", chapter = currentChapter))
+                messages.add(ChatMessage.Ai("The world continues around you...", name = "Narrator", chapter = currentChapter))
             } finally {
                 isLoading = false
             }
@@ -197,8 +159,7 @@ Begin Chapter 1 immediately with a beautiful opening scene in the correct settin
 
         narrationRegex.find(reply)?.let {
             val text = it.groupValues[1].trim()
-            val msg = ChatMessage.Narration(text, chapter = currentChapter)
-            messages.add(msg)
+            messages.add(ChatMessage.Narration(text = text, chapter = currentChapter))
             storyRepository.saveMessage(
                 ChatMessageEntity(
                     id = 0L,
@@ -215,11 +176,8 @@ Begin Chapter 1 immediately with a beautiful opening scene in the correct settin
         dialogueRegex.findAll(reply).forEach { match ->
             val name = match.groupValues[1].trim()
             val text = match.groupValues[2].trim()
-
             if (!relationships.containsKey(name)) relationships[name] = 15
-
-            val msg = ChatMessage.Ai(text, name, chapter = currentChapter)
-            messages.add(msg)
+            messages.add(ChatMessage.Ai(text = text, name = name, chapter = currentChapter))
             storyRepository.saveMessage(
                 ChatMessageEntity(
                     id = 0L,
@@ -239,12 +197,9 @@ Begin Chapter 1 immediately with a beautiful opening scene in the correct settin
                 currentChapter = completed + 1
                 progress = (currentChapter - 1) / 10f
                 userMessagesInCurrentChapter = 0
-                messages.add(ChatMessage.Narration("🌟 Chapter $completed Complete!\nYour bonds have deepened...", chapter = currentChapter))
+                messages.add(ChatMessage.Narration(text = "🌟 Chapter $completed Complete!\nYour bonds have deepened...", chapter = currentChapter))
             }
         }
-
-        if (reply.contains("good", ignoreCase = true) || reply.contains("kind", ignoreCase = true)) moralAlignment = "Good"
-        if (reply.contains("evil", ignoreCase = true) || reply.contains("selfish", ignoreCase = true)) moralAlignment = "Evil"
 
         if (reply.contains("bond", ignoreCase = true) || reply.contains("smile", ignoreCase = true)) {
             relationships.forEach { (name, level) ->
